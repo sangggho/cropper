@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 
 
 ##
+# class
 class Cropper:
     def __init__(self, img_path: str, label_path: str, target_size=512):
         self.img_path = img_path
