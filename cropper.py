@@ -4,9 +4,18 @@ from pathlib import Path
 import cv2 as cv
 
 
+def eqhist(img):
+    ycrcb = cv.cvtColor(img, cv.COLOR_BGR2YCrCb)
+    y, cr, cb = cv.split(ycrcb)
+    y2 = cv.equalizeHist(y)
+    y2crcb = cv.merge([y2, cr, cb])
+    img = cv.cvtColor(y2crcb, cv.COLOR_YCrCb2BGR)
+    print('equalize histogram done.')
+
+
 def cropper(opt):
-    target_name, target_size, multiple, eqhist = \
-        opt.target_name, opt.target_size, opt.multiple, opt.eqhist
+    target_name, target_size, multiple, apply_eqhist = \
+        opt.target_name, opt.target_size, opt.multiple, opt.apply_eqhist
 
     # Directory
     current_dir = Path.cwd()
@@ -27,13 +36,8 @@ def cropper(opt):
     img = cv.imread(img_file.name)
 
     # equalize histogram
-    if eqhist:
-        ycrcb = cv.cvtColor(img, cv.COLOR_BGR2YCrCb)
-        y, cr, cb = cv.split(ycrcb)
-        y2 = cv.equalizeHist(y)
-        y2crcb = cv.merge([y2, cr, cb])
-        img = cv.cvtColor(y2crcb, cv.COLOR_YCrCb2BGR)
-        print('equalize histogram done.')
+    if apply_eqhist:
+        eqhist(img)
 
     h, w, ch = img.shape
 
@@ -97,7 +101,7 @@ if __name__ == '__main__':
     parser.add_argument('--target-name', type=str, help='target name')
     parser.add_argument('--target-size', type=int, default=512, help='target size')
     parser.add_argument('--multiple', type=int, default=1, help='value for how much overlap')
-    parser.add_argument('--eqhist', action='store_true', help='apply equalize histogram')
+    parser.add_argument('--apply-eqhist', action='store_true', help='apply equalize histogram')
     opt = parser.parse_args()
 
     try:
