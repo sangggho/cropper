@@ -3,35 +3,15 @@ from pathlib import Path
 
 import cv2 as cv
 
+from labeler import Labeler
 
-def label_reader(label_file):
-    # Label Data
-    with open(str(label_file), 'r') as label:
-        line = label.readlines()
-        info = [l.strip() for l in line]
 
-    count_info_line = len(info)
-    label_info = dict()
-    for i in range(count_info_line):
-        split_info = info[i].split(' ')
-        id = split_info[0]
-        center_x_ratio = float(split_info[1])
-        center_y_ratio = float(split_info[2])
-        width_ratio = float(split_info[3])
-        height_ratio = float(split_info[4])
 
-        label_info.update({
-            'ID': id,
-            'CENTER_X_RATIO': center_x_ratio,
-            'CENTER_Y_RATIO': center_y_ratio,
-            'WIDTH_RATIO': width_ratio,
-            'HEIGHT_RATIO': height_ratio
-        })
-    return label_info
+
 
 
 def bbox_info(label_file, img_width, img_height):
-    label_info = label_reader(label_file)
+    label_info = Labeler(label_file).describe_label()
     cxr = label_info['CENTER_X_RATIO']
     cyr = label_info['CENTER_Y_RATIO']
     wr = label_info['WIDTH_RATIO']
@@ -54,10 +34,13 @@ def bbox_info(label_file, img_width, img_height):
     return calc_results
 
 
-def eqhist(img):
+def eqhist(img, type=None):
     ycrcb = cv.cvtColor(img, cv.COLOR_BGR2YCrCb)
     y, cr, cb = cv.split(ycrcb)
     y2 = cv.equalizeHist(y)
+    if type == 'clahe':
+        clahe = cv.createCLAHE(2.0, (8, 8))
+        y2 = clahe.apply(y)
     y2crcb = cv.merge([y2, cr, cb])
     img = cv.cvtColor(y2crcb, cv.COLOR_YCrCb2BGR)
     print('equalize histogram done.')
@@ -70,7 +53,7 @@ def cropper(img, img_file_path, label_file_path, opt):
 
     # equalize histogram
     if apply_eqhist:
-        img = eqhist(img)
+        img = eqhist(img, type='clahe')
 
     h, w, ch = img.shape
 
@@ -114,7 +97,8 @@ def cropper(img, img_file_path, label_file_path, opt):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Cropper Options')
+    parser = argparse.ArgumentParser(description='Pre-Processing Options')
+    parser.add_argument('--job', type=str, help='choose your job')
     parser.add_argument('--target-name', type=str, help='target name')
     parser.add_argument('--target-size', type=int, default=512, help='target size')
     parser.add_argument('--multiple', type=int, default=1, help='value for how much overlap')
@@ -126,27 +110,40 @@ if __name__ == '__main__':
     if not Path.exists(data_dir):
         Path(data_dir).mkdir(parents=True, exist_ok=True)
 
-    # File Check
-    file_lists = sorted(data_dir.glob(opt.target_name + '.*'))
-    img_files = []
-    label_files = []
+    if opt.job == 'cropper':
+        # File Check
+        file_lists = sorted(data_dir.glob(opt.target_name + '.*'))
+        img_files = []
+        label_files = []
 
-    if len(file_lists) != 2:
-        fname = file_lists[0].name.split('.')[0]
-        with open(f'{data_dir / fname}' + '.txt', 'w') as txt:
-            txt.write('0 0.5 0.5 1 1')
+        # Single file
+        if len(file_lists) != 2:
+            fname = file_lists[0].name.split('.')[0]
+            with open(f'{data_dir / fname}' + '.txt', 'w') as txt:
+                txt.write('0 0.5 0.5 1 1')
 
-    for file_path in file_lists:
-        if file_path.name.endswith('.jpg') or file_path.name.endswith('.png'):
-            img_files.append(str(file_path))
-        if file_path.name.endswith('.txt') or file_path.name.endswith('.xml'):
-            label_files.append(str(file_path))
+        # If more files...
+        for file_path in file_lists:
+            if file_path.name.endswith('.jpg') or file_path.name.endswith('.png'):
+                img_files.append(str(file_path))
+            if file_path.name.endswith('.txt') or file_path.name.endswith('.xml'):
+                label_files.append(str(file_path))
 
-    print('\n', img_files, label_files, '\n')
+        print('\n', img_files, label_files, '\n')
 
-    for i, l in zip(range(len(img_files)), range(len(label_files))):
-        img = cv.imread(str(img_files[i]))
-        try:
-            cropper(img, Path(img_files[i]), Path(label_files[l]), opt)
-        except TypeError:
-            assert 'Input Image Name. [--target-name]'
+        # run cropper
+        for i, l in zip(range(len(img_files)), range(len(label_files))):
+            img = cv.imread(str(img_files[i]))
+            try:
+                cropper(img, Path(img_files[i]), Path(label_files[l]), opt)
+            except TypeError:
+                assert 'Input Image Name. [--target-name]'
+
+    elif opt.job == 'deform_checker':
+        pass
+
+    else:
+        print('''
+        Take Your Job that You Want. [--job JOB_NAME]
+        JOB_NAME : cropper, deform_checker
+        ''')
