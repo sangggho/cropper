@@ -6,34 +6,6 @@ import cv2 as cv
 from labeler import Labeler
 
 
-
-
-
-
-def bbox_info(label_file, img_width, img_height):
-    label_info = Labeler(label_file).describe_label()
-    cxr = label_info['CENTER_X_RATIO']
-    cyr = label_info['CENTER_Y_RATIO']
-    wr = label_info['WIDTH_RATIO']
-    hr = label_info['HEIGHT_RATIO']
-
-    center_x_coord = round(cxr * img_width)
-    center_y_coord = round(cyr * img_height)
-    bbox_width_size = round(wr * img_width)
-    bbox_height_size = round(hr * img_height)
-
-    p0 = (round(center_x_coord - bbox_width_size / 2), round(center_y_coord - bbox_height_size / 2))
-    p1 = (round(center_x_coord + bbox_width_size / 2), round(center_y_coord - bbox_height_size / 2))
-    p2 = (round(center_x_coord - bbox_width_size / 2), round(center_y_coord + bbox_height_size / 2))
-    p3 = (round(center_x_coord + bbox_width_size / 2), round(center_y_coord + bbox_height_size / 2))
-
-    calc_results = {
-        'BBOX': (bbox_width_size, bbox_height_size),
-        'POINT': (p0, p1, p2, p3)
-    }
-    return calc_results
-
-
 def eqhist(img, type=None):
     ycrcb = cv.cvtColor(img, cv.COLOR_BGR2YCrCb)
     y, cr, cb = cv.split(ycrcb)
@@ -60,8 +32,9 @@ def cropper(img, img_file_path, label_file_path, opt):
     save_dir = data_dir / opt.target_name
     save_dir.mkdir(parents=True, exist_ok=True)
 
+    lb = Labeler(label_file_path)
     # Label data & calculated values returns
-    calc_value = bbox_info(label_file_path, w, h)
+    calc_value = lb.describe_bbox(w, h)
     bbox_width_size, bbox_height_size = calc_value['BBOX']
     p0, p1, p2, p3 = calc_value['POINT']
 
