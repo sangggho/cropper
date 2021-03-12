@@ -3,6 +3,11 @@ from pathlib import Path
 
 import cv2 as cv
 
+# directory
+DATA_DIR = Path.cwd() / 'data'
+if not Path.exists(DATA_DIR):
+    Path(DATA_DIR).mkdir(parents=True, exist_ok=True)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Pre-Processing Options')
     parser.add_argument('--job', type=str, help='choose your job')
@@ -11,11 +16,6 @@ if __name__ == '__main__':
     parser.add_argument('--multiple', type=int, default=1, help='value for how much overlap')
     parser.add_argument('--apply-eqhist', action='store_true', help='apply equalize histogram')
     opt = parser.parse_args()
-
-    # Directory
-    data_dir = Path.cwd() / 'data'
-    if not Path.exists(data_dir):
-        Path(data_dir).mkdir(parents=True, exist_ok=True)
 
     if opt.job == 'cropper':
         # File Check

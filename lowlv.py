@@ -1,4 +1,5 @@
 import cv2 as cv
+import main
 
 
 class LowLv:
@@ -46,7 +47,7 @@ class LowLv:
         if apply_eqhist:
             img = eqhist(img, type='clahe')
 
-        save_dir = data_dir / opt.target_name
+        save_dir = main.DATA_DIR / opt.target_name
         save_dir.mkdir(parents=True, exist_ok=True)
 
         lb = Labeler(label_file_path)
