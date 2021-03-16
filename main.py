@@ -1,7 +1,9 @@
 import argparse
 from pathlib import Path
-
+import numpy as np
 import cv2 as cv
+
+import lowlv as llv
 
 # directory
 DATA_DIR = Path.cwd() / 'data'
@@ -42,7 +44,7 @@ if __name__ == '__main__':
         for i, l in zip(range(len(img_files)), range(len(label_files))):
             img = cv.imread(str(img_files[i]))
             try:
-                cropper(img, Path(img_files[i]), Path(label_files[l]), opt)
+                llv.slide_crop(img, Path(img_files[i]), Path(label_files[l]), opt)
             except TypeError:
                 assert 'Input Image Name. [--target-name]'
 
@@ -50,7 +52,9 @@ if __name__ == '__main__':
         pass
 
     else:
-        print('''
-        Take Your Job that You Want. [--job JOB_NAME]
-        JOB_NAME : cropper, deform_checker
-        ''')
+        print(
+            '''
+            Take Your Job that You Want. [--job JOB_NAME]
+            JOB_NAME : cropper, deform_checker
+            '''
+        )
